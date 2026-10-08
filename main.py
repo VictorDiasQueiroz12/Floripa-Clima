@@ -1,4 +1,6 @@
 import requests #biblioteca que faz consultas pela internet
+import json #biblioteca do python para ler e escrever JSON
+from pathlib import Path #ajuda a trabalhar com caminhos de arquivos
 
 url = "https://archive-api.open-meteo.com/v1/archive"
 
@@ -54,12 +56,40 @@ try:
         #A cada repetição adiciona mais um dia em "registros" que está vazio
         registros.append(registro)
 
+    #__file__ é o caminho desse arquivo (main.py)
+    #
+    pasta_projetos = Path(__file__).resolve().parent
 
+    #define uma subpasta chamada "dados"
+    pasta_dados = pasta_projetos / "dados"
+
+
+    #cria a pasta caso ela ainda não exista
+    #exist_ok evita um erro se a pasta já existir
+    pasta_dados.mkdir(exist_ok=True)
+
+    #define o caminho completo do arquivo de saida
+    caminho_arquivo = pasta_dados / "clima_florianopolis.json"
+
+    #"with" fecha o arquivo automaticamente ao terminar o bloco
+    #utf-8 é pra formatação de texto (permitir acentos)
+    #"w" cria o arquivo ou substitui seu conteudo se ele ja existir
+    with caminho_arquivo.open("w", encoding="utf-8") as arquivo:
+         
+        #escreve a lista de registro em formato json
+        json.dump(
+            registros,
+            arquivo,
+            ensure_ascii=False, #mantem os acentos legiveis
+            indent=4 #organiza com espaços e quebras de linha
+            )
+    print(f"Dados salvos em {caminho_arquivo}")
+    print()
 
     print("Dados meteorológicos de Florianópolis")
 
     #o "f" permite passar os valores no texto usando chaves{}
-    print(f"Período:{parametros['start_date']}"
+    print(f"Período:{parametros['start_date']} "
       f"a {parametros['end_date']}"
       )
 
@@ -77,7 +107,7 @@ try:
         #Pega a info de cada valor registrado e printa ela
         print(f"Data: {registro['data']}")
         print(f"Temperatura máxima: {registro['temperatura_maxima']} °C")
-        print(f"Temperatura miníma: {registro['temperatura_minima']} °C")
+        print(f"Temperatura mínima: {registro['temperatura_minima']} °C")
         print(f"Precipitação: {registro['precipitacao']} mm")
         print(f"Amplitude térmica: {registro['amplitude_termica']} °C")
         print()
@@ -85,5 +115,13 @@ try:
 #Trata exceções de requisições da biblioteca, como falhas de coneção, erros HTTP e timeout
 except requests.exceptions.RequestException as erro: #"as erro": ta guardando a exceção na variavel erro
     print(f"Não foi possível consultar a API: {erro}")
+
+#trata falhas ao criar a pasta ou escrever o arquivo
+except OSError as erro:
+    print(f"Não foi possível salvar os dados: {erro}")
+
+
+
+
 
     #.\.venv\Scripts\python.exe main.py
