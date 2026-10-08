@@ -120,8 +120,4 @@ except requests.exceptions.RequestException as erro: #"as erro": ta guardando a 
 except OSError as erro:
     print(f"Não foi possível salvar os dados: {erro}")
 
-
-
-
-
-    #.\.venv\Scripts\python.exe main.py
+#.\.venv\Scripts\python.exe main.py
