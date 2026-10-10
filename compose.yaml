@@ -1,0 +1,27 @@
+#define os serviços que o docker vai executar
+services:
+  db:
+    #imagem oficial com o postgreSQL versão 16
+    #uma imagem é oque dá origem a um container
+    image: postgres:16
+
+    #le as configurações do ".env"
+    env_file:
+      - .env
+
+    #liga uma porta do computador a porta do container
+    #computador: 5433 -> postgreSQL no container: 5432
+    #"127.0.0.1" restringe o acesso ao proprio computador
+
+    #O endereço 127.0.0.1 é a interface de loopback (também conhecida como localhost). Ela é uma rede virtual interna que nunca sai de dentro do seu chip de rede. Ela serve apenas para o computador conversar com ele mesmo.
+    ports:
+      - "127.0.0.1:5433:5432"
+
+    #guarda os arquivos do banco em um volume persistente
+    #desse jeito recriar um container não elimina esses dados
+    volumes:
+      - postgres_data:/var/lib/postgresql/postgres_data
+
+#declara o volume utilizado pelo serviço db
+volumes:
+  postgres_data:
