@@ -59,6 +59,30 @@ try:
 
     print()
     print("Análise do período")
+
+    if dias_com_dado_chuva > 0:
+        #".1f" exibe um numero depois da virgula
+        print(f"Precipitação acumulada disponível: {chuva_total:.1f} mm")
+
+        #mostra a cobertura para nao confundir dados ausentes com dias secos
+        print(
+            f"Dias com dados de precipitação: "
+            f"{dias_com_dado_chuva} de {len(registros)}"
+        )
+    else:
+        print("Não há dados de precipitação disponíveis.")
+
+
+    if dias_mais_quente is not None:
+        print(f"Dias com maior máxima: {dias_mais_quente['data']}")
+        print(
+            f"Temperatura máxima: "
+            f"{dias_mais_quente['temperatura_maxima']} °C"
+        )
+    else:
+        print("Não há temperaturas máximas disponíveis.")
+
+
 except FileExistsError:
     #acontece quando o arquivo não existe no caminho informado
     print("Arquivo não encontrado. Execute o main.py para gerar os dados.")
