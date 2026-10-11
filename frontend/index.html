@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floripa Clima</title>
+</head>
+<body>
+    <!--"main" identifica o conteudo principal da pagina-->
+    <main>
+        <h1>Floripa Clima</h1>
+        <p>Explore os dados meteorológicos de Florianópolis.</p>
+        <!--esse formulario reuinira os filtros de consulta-->
+        <form id="filtros">
+            <!--"for" conecta o texto ao campo com o mesmo id-->
+            <label for="inicio">Data inicial:</label>
+            <input type="date" name="inicio" id="inicio" value="2025-01-01" required>
+
+            <label for="fim">Data final:</label>
+            <input type="date" name="fim" id="fim" value="2025-01-10" required>
+
+            <!--envia o formulario-->
+            <button type="submit">Consultar</button>
+        </form>
+
+        <!--Mostrara uma mensagem de carregamento, sucesso ou erro-->
+        <p id="mensagem" role="status">
+            A consulta será conectada na próxima etapa.
+        </p>
+
+        <table>
+            <!--Cabeçalho da tabela-->
+            <thead>
+                <tr>
+                    <th scope="col">Data</th>
+                    <th scope="col">Máxima (°C)</th>
+                    <th scope="col">Mínima (°C)</th>
+                    <th scope="col">Precipitação (mm)</th>
+                </tr>
+            </thead>
+
+            <tbody id="registros"></tbody>
+        </table>
+        <p>
+            Fonte: Open-Meteo. Dados históricos de reanálise para um ponto representativo do centro de Florianópolis.
+        </p>
+    </main>
+</body>
+</html>

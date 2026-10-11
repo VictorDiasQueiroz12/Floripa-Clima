@@ -5,6 +5,7 @@ import psycopg  #conexão com PostgreSQL
 from psycopg.rows import dict_row  #faz cada linha consultada virar um dicionario, com os nomes das colunas como chaves
 from dotenv import load_dotenv  #carrega as configurações do ".env"
 from datetime import date  #representa datas sem horários
+from fastapi.responses import FileResponse #permite devolver um arquivo como resposta de uma rota
 
 pasta_projeto = Path(__file__).resolve().parent
 load_dotenv(pasta_projeto / ".env")
@@ -25,7 +26,7 @@ def verificar_saude():
     }
 
 
-# ROTA GET /CLIMA.
+#ROTA GET /CLIMA
 @app.get("/clima")
 def listar_clima(
     #esses parametros são recebidos pela URL
@@ -122,3 +123,12 @@ def listar_clima(
             status_code=503,
             detail="Não foi possível consultar os dados meteorológicos.",
         ) from erro
+
+
+#a rota "("/")" representa a pagina inicial da aplicação
+@app.get("/", response_class=FileResponse)
+def pagina():
+    #localiza o HTML dentro da pasta frontend
+    caminho_html = pasta_projeto / "frontend" / "index.html"
+    #envia o arquivo para o navegador, que interpreta o HTML
+    return FileResponse(caminho_html)
