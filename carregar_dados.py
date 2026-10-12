@@ -14,7 +14,7 @@ load_dotenv(pasta_projeto / ".env")
 caminho_json = pasta_projeto / "dados" / "clima_florianopolis.json"
 
 #define o comando SQL que sera executado para cada dia 
-#"$s" sao espaços reservados para valores
+#"%s" sao espaços reservados para valores
 
 #a biblioteca envia esses valores separadamente do SQL
 
@@ -57,7 +57,7 @@ def salvar_registros(registros):
                 #uma tupla reune os valores na mesma ordem dos "%s"
                 valores = (
                     "Florianópolis - Centro",
-                    "Open-Mateo",
+                    "Open-Meteo",
                     registro["data"],
                     registro["temperatura_maxima"],
                     registro["temperatura_minima"],
@@ -68,53 +68,26 @@ def salvar_registros(registros):
     #devolve a quantidade processada dps da confirmação no banco
     return len(registros)
 
-try:
-    #abre o arquivo e recupera a lista de registros
-    with caminho_json.open("r", encoding="utf-8") as arquivo:
-        registros = json.load(arquivo)
+#essa funçao cuida da execução pelo terminal: le o JSON, chama a funçao de gravação e mostra o resultado
+def executar_importacao():
+    try:
+        #abre o arquivo e recupera a lista de registros
+        with caminho_json.open("r", encoding="utf-8") as arquivo:
+            registros = json.load(arquivo)
+        #chama a funçao e entrega a lista lida do JSON, o numero retornado fica guardado em "quantidade"
+        quantidade = salvar_registros(registros)
+        print(f"Importação concluída: {quantidade} registros processados.")
 
-    #conecta ao PostgreSQL executado pelo Docker
-    #o Python está no Windows, então usa a porta externa 5433.
-    #"os.getenv" busca o valor de uma variável de ambiente.
-    with psycopg.connect(
-        host="127.0.0.1",
-        port=5433,
-        dbname=os.getenv("POSTGRES_DB"),
-        user=os.getenv("POSTGRES_USER"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-        connect_timeout=10,
-    ) as conexao:
+    except FileNotFoundError:
+        print("JSON não encontrado. Execute o main.py primeiro.")
+    except json.JSONDecodeError:
+        print("O arquivo contém um JSON inválido.")
+    except psycopg.Error as erro:
+        print(f"Erro ao acessar o PostgreSQL: {erro}")
+    except OSError as erro:
+        print(f"Erro ao ler o arquivo: {erro}")
 
-        #um cursor permite executar comandos SQL pela conexão.
-        with conexao.cursor() as cursor:
-
-            for registro in registros:
-                #uma tupla reúne os valores na mesma ordem dos %s.
-                valores = (
-                    "Florianópolis - Centro",
-                    "Open-Meteo",
-                    registro["data"],
-                    registro["temperatura_maxima"],
-                    registro["temperatura_minima"],
-                    registro["precipitacao"],
-                )
-
-                #executa o INSERT com os valores deste dia.
-                cursor.execute(sql, valores)
-
-        #ao sair do bloco "with conexao" sem erro, as alterações são confirmadas automaticamente.
-        #se ocorrer um erro dentro dele, são desfeitas.
-
-    print(f"Importação concluída: {len(registros)} registros processados.")
-
-except FileNotFoundError:
-    print("JSON não encontrado. Execute o main.py primeiro.")
-
-except json.JSONDecodeError:
-    print("O arquivo contém um JSON inválido.")
-
-except psycopg.Error as erro:
-    print(f"Erro ao acessar o PostgreSQL: {erro}")
-
-except OSError as erro:
-    print(f"Erro ao ler o arquivo: {erro}")
+#python define "__name__" como "__main__" quando executar esse arquivo diretamente: python carregar_dados.py
+#se outro arquivo importar salvar_registros, essa condiçao sera falsa e a importaçao do JSON nao sera executada
+if __name__ == "__main__":
+    executar_importacao()
