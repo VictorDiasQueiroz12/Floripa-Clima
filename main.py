@@ -1,30 +1,38 @@
-import requests #biblioteca que faz consultas pela internet
-import json #biblioteca do python para ler e escrever JSON
-from pathlib import Path #ajuda a trabalhar com caminhos de arquivos
+import requests  #biblioteca que faz consultas pela internet
+import json  #biblioteca do python para ler e escrever JSON
+from pathlib import Path  #ajuda a trabalhar com caminhos de arquivos
 
 url = "https://archive-api.open-meteo.com/v1/archive"
 
-parametros = { #Dicionario que organiza as informações por nome e valor
-    "latitude": -27.5954,
-    "longitude": -48.5480,
-    "start_date": "2025-01-01",
-    "end_date": "2025-01-10",
-    "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
-    "timezone": "America/Sao_Paulo",
-}
 
-#Primeiro vai tentar fazer oque está aqui dentro, caso de errado vai para o except
-try:
-    #Faz a consulta e diz que o tempo limite de espera é de 30 segundos. 
+#recebe as datas de quem chamar a função, assim o período deixa de ser fixo dentro da consulta
+def extrair_dados(inicio, fim):
+    parametros = {  #dicionario que organiza as informações por nome e valor
+        "latitude": -27.5954,
+        "longitude": -48.5480,
+        "start_date": inicio,
+        "end_date": fim,
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
+        "timezone": "America/Sao_Paulo",
+    }
+
+    #faz a consulta e diz que o tempo limite de espera é de 30 segundos
     resposta = requests.get(url, params=parametros, timeout=30)
 
-    #Gera um erro caso a API responda com uma falha HTTP
+    #gera um erro caso a API responda com uma falha HTTP
     resposta.raise_for_status()
 
-    #Converte o json recebido em estrutura do Python
+    #converte o json recebido em estrutura do Python
     dados = resposta.json()
 
-    # print(dados) -> mostraria os dados que estou pegando
+    #devolve a resposta para quem chamou esta função
+    return dados
+
+
+#recebe a resposta da API e devolve a lista organizada
+#esta função não consulta a internet nem grava no banco
+def transformar_dados(dados):
+    #"print(dados)" mostraria os dados que estou pegando
     diarios = dados["daily"]
 
     registros = []
@@ -34,15 +42,14 @@ try:
         minima = diarios["temperature_2m_min"][indice]
         chuva = diarios["precipitation_sum"][indice]
 
-
-        #Diz que amplitude tem um valor nulo ou indefinido
+        #diz que amplitude tem um valor nulo ou indefinido
         amplitude = None
 
-        #Calcula a amplitude apenas se tiver as duas temperaturas
+        #calcula a amplitude apenas se tiver as duas temperaturas
         if maxima is not None and minima is not None:
-            amplitude = round(maxima - minima, 1) #round arredonda o valor e o 1 fala o numero de casas decimais após a virgula
+            amplitude = round(maxima - minima, 1)  #round arredonda o valor e o 1 fala o numero de casas decimais após a virgula
 
-        #Dicionario que tem as informações de um unico dia
+        #dicionario que tem as informações de um unico dia
         registro = {
             "data": data,
             "temperatura_maxima": maxima,
@@ -51,75 +58,86 @@ try:
             "amplitude_termica": amplitude,
         }
 
-
         #append adiciona um elemento ao final de uma lista
-        #A cada repetição adiciona mais um dia em "registros" que está vazio
+        #a cada repetição adiciona mais um dia em "registros" que está vazio
         registros.append(registro)
 
-    #__file__ é o caminho desse arquivo (main.py)
-    #
-    pasta_projetos = Path(__file__).resolve().parent
-
-    #define uma subpasta chamada "dados"
-    pasta_dados = pasta_projetos / "dados"
+    #fica fora do for para devolver todos os dias somente depois que a lista estiver completa.
+    return registros
 
 
-    #cria a pasta caso ela ainda não exista
-    #exist_ok evita um erro se a pasta já existir
-    pasta_dados.mkdir(exist_ok=True)
+#coordena a coleta quando executamos pelo terminal
+def executar_coleta():
+    inicio = "2025-01-01"
+    fim = "2025-01-10"
 
-    #define o caminho completo do arquivo de saida
-    caminho_arquivo = pasta_dados / "clima_florianopolis.json"
+    #primeiro vai tentar fazer oque está aqui dentro, caso de errado vai para o except
+    try:
+        #a resposta da primeira função alimenta a segunda
+        dados = extrair_dados(inicio, fim)
+        registros = transformar_dados(dados)
 
-    #"with" fecha o arquivo automaticamente ao terminar o bloco
-    #utf-8 é pra formatação de texto (permitir acentos)
-    #"w" cria o arquivo ou substitui seu conteudo se ele ja existir
-    with caminho_arquivo.open("w", encoding="utf-8") as arquivo:
-         
-        #escreve a lista de registro em formato json
-        json.dump(
-            registros,
-            arquivo,
-            ensure_ascii=False, #mantem os acentos legiveis
-            indent=4 #organiza com espaços e quebras de linha
+        #"__file__" é o caminho desse arquivo (main.py)
+        pasta_projetos = Path(__file__).resolve().parent
+
+        #define uma subpasta chamada "dados"
+        pasta_dados = pasta_projetos / "dados"
+
+        #cria a pasta caso ela ainda não exista
+        #"exist_ok" evita um erro se a pasta já existir
+        pasta_dados.mkdir(exist_ok=True)
+
+        #define o caminho completo do arquivo de saida
+        caminho_arquivo = pasta_dados / "clima_florianopolis.json"
+
+        #"with" fecha o arquivo automaticamente ao terminar o bloco
+        #utf-8 é pra formatação de texto (permitir acentos)
+        #"w" cria o arquivo ou substitui seu conteudo se ele ja existir
+        with caminho_arquivo.open("w", encoding="utf-8") as arquivo:
+
+            #escreve a lista de registro em formato json
+            json.dump(
+                registros,
+                arquivo,
+                ensure_ascii=False,  #mantem os acentos legiveis
+                indent=4  #organiza com espaços e quebras de linha
             )
-    print(f"Dados salvos em {caminho_arquivo}")
-    print()
 
-    print("Dados meteorológicos de Florianópolis")
-
-    #o "f" permite passar os valores no texto usando chaves{}
-    print(f"Período:{parametros['start_date']} "
-      f"a {parametros['end_date']}"
-      )
-
-    #o len retorna a quantidade de elementos dentro da lista
-    print(f"Total de registros: {len(registros)}")
-    print()    #é só uma linha em branco mesmo
-
-
-
-    #Percorendo a lista criada
-    #Em cada repetição, "registro" representa o dicionario de um dia
-    #Logica: Para cada registro dentro de Registros, exiba as infos
-    for registro in registros:
-
-        #Pega a info de cada valor registrado e printa ela
-        print(f"Data: {registro['data']}")
-        print(f"Temperatura máxima: {registro['temperatura_maxima']} °C")
-        print(f"Temperatura mínima: {registro['temperatura_minima']} °C")
-        print(f"Precipitação: {registro['precipitacao']} mm")
-        print(f"Amplitude térmica: {registro['amplitude_termica']} °C")
+        print(f"Dados salvos em {caminho_arquivo}")
         print()
 
-#Trata exceções de requisições da biblioteca, como falhas de coneção, erros HTTP e timeout
-except requests.exceptions.RequestException as erro: #"as erro": ta guardando a exceção na variavel erro
-    print(f"Não foi possível consultar a API: {erro}")
+        print("Dados meteorológicos de Florianópolis")
 
-#trata falhas ao criar a pasta ou escrever o arquivo
-except OSError as erro:
-    print(f"Não foi possível salvar os dados: {erro}")
+        #o "f" permite passar os valores no texto usando chaves{}
+        print(f"Período: {inicio} a {fim}")
+
+        #o len retorna a quantidade de elementos dentro da lista
+        print(f"Total de registros: {len(registros)}")
+        print()  #é só uma linha em branco mesmo
+
+        #percorendo a lista criada
+        #em cada repetição, "registro" representa o dicionario de um dia
+        #logica: Para cada registro dentro de Registros, exiba as infos
+        for registro in registros:
+
+            #pega a info de cada valor registrado e printa ela
+            print(f"Data: {registro['data']}")
+            print(f"Temperatura máxima: {registro['temperatura_maxima']} °C")
+            print(f"Temperatura mínima: {registro['temperatura_minima']} °C")
+            print(f"Precipitação: {registro['precipitacao']} mm")
+            print(f"Amplitude térmica: {registro['amplitude_termica']} °C")
+            print()
+
+    #trata exceções de requisições da biblioteca, como falhas de coneção, erros HTTP e timeout
+    except requests.exceptions.RequestException as erro:  #"as erro": ta guardando a exceção na variavel erro
+        print(f"Não foi possível consultar a API: {erro}")
+
+    #trata falhas ao criar a pasta ou escrever o arquivo
+    except OSError as erro:
+        print(f"Não foi possível salvar os dados: {erro}")
 
 
-
-#.\.venv\Scripts\python.exe main.py
+#executa a coleta apenas quando rodamos: python main.py
+#importar as funções em outro arquivo não dispara a coleta
+if __name__ == "__main__":
+    executar_coleta()
