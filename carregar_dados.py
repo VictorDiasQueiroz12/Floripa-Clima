@@ -1,11 +1,7 @@
 import json
-
 import psycopg  #permite conectar ao PostgreSQL e executar SQL.
-
 import os #permite acessar configuraçoes nas variaveis de ambiente, como o usuario e a senha do banco 
-
 from pathlib import Path
-
 from dotenv import load_dotenv #"load_dotenv" le o arquivo ".env" e disponibiliza suas configuraçoes para serem acessadas com "os.getenv()"
 
 #localiza a pasta onde esse arquivo esta
@@ -42,6 +38,36 @@ sql = """
         temperatura_minima = EXCLUDED.temperatura_minima,
         precipitacao = EXCLUDED.precipitacao;
 """
+#essa funcao recebe uma lista de registros e salva no banco
+#definir a funcao não executa seu conteudo, ela so executa quando chamar "salvar_registros()"
+def salvar_registros(registros):
+    #conecta ao PostgreSQL executado pelo Docker 
+    #"os.getenv" busca o valor do ".env"
+    with psycopg.connect(
+        host="127.0.0.1",
+        port="5433",
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        connect_timeout=10,
+    ) as conexao:
+        #um cursor permite executar comandos SQL pela conexao
+        with conexao.cursor() as cursor:
+            for registro in registros:
+                #uma tupla reune os valores na mesma ordem dos "%s"
+                valores = (
+                    "Florianópolis - Centro",
+                    "Open-Mateo",
+                    registro["data"],
+                    registro["temperatura_maxima"],
+                    registro["temperatura_minima"],
+                    registro["precipitacao"],
+                )
+                #executa o INSERT com os valores do dia
+                cursor.execute(sql, valores)
+    #devolve a quantidade processada dps da confirmação no banco
+    return len(registros)
+
 try:
     #abre o arquivo e recupera a lista de registros
     with caminho_json.open("r", encoding="utf-8") as arquivo:
