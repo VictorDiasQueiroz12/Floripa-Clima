@@ -45,6 +45,17 @@
             <p id="data-maxima">Consulte um período para vizualizar.</p>
         </section>
 
+        <!--canvas vai criar uma superficie para desenho, onde o Js usa o Chart.js para desenhar-->
+        <section aria-labelledby="titulo-grafico">
+            <h2 id="titulo-grafico">Temperaturas por dia</h2>
+            <div class="area-grafico">
+                <canvas
+                id="grafico-temperaturas"
+                role="img"
+                aria-label="Temperaturas máximas e mínimas por dia. Valores disponíveis na tabela abaixo"></canvas>
+            </div>
+        </section>
+
         </section>
         <table>
             <!--cabeçalho da tabela-->
@@ -63,6 +74,8 @@
             Fonte: Open-Meteo. Dados históricos de reanálise para um ponto representativo do centro de Florianópolis.
         </p>
 
+        <!--carrega uma biblioteca que desenha os graficos-->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer"></script>
         <!--carrega o JS responsavel pela consulta e pela tabela-->
         <script src="/static/script.js" dafter></script>
     </main>
