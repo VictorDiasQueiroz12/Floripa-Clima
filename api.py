@@ -7,6 +7,9 @@ from dotenv import load_dotenv  #carrega as configurações do ".env"
 from datetime import date  #representa datas sem horários
 from fastapi.responses import FileResponse #permite devolver um arquivo como resposta de uma rota
 from fastapi.staticfiles import StaticFiles #permite servir arquivos estaticos como JS e CSS
+import requests #permite tratar falhas ao consultar o Open-Meteo
+from main import extrair_dados, transformar_dados
+from carregar_dados import salvar_registros
 
 pasta_projeto = Path(__file__).resolve().parent
 load_dotenv(pasta_projeto / ".env")
@@ -140,3 +143,76 @@ def pagina():
     caminho_html = pasta_projeto / "frontend" / "index.html"
     #envia o arquivo para o navegador, que interpreta o HTML
     return FileResponse(caminho_html)
+
+#POST é usado porque esta operaçao grava dados no banco
+@app.post("/importar")
+def importar_clima(inicio: date, fim: date):
+    #as duas datas são obrigatorias, sao recebidas como parametros da URL
+    if inicio > fim:
+        raise HTTPException(
+            status_code=400,
+            detail="A data inicial deve ser maior ou igual à final."
+        )
+    if fim >= date.today():
+        raise HTTPException(
+            status_code=400,
+            detail="Escolha uma data final anterior ao dia de hoje."
+        )
+    #subtrai duas datas da um intervalo
+    #".days" recupera a quantidade de dias desse intervalo
+    #"+ 1" soma, porque inclui as duas datas na importação
+    quantidade_dias = (fim - inicio).days + 1
+
+    if quantidade_dias > 366:
+        raise HTTPException(
+            status_code=400,
+            detail="Importe no máximo 366 dias por execução."
+        )
+
+    try:
+        #EXTRAÇÃO
+        #"isoformat()" transforma date em texto no formato AAAA-MM-DD
+        dados = extrair_dados(
+            inicio.isoformat(),
+            fim.isoformat(),
+        )
+
+        #TRANSFORMAÇÃO
+        #converte as listas da API em registros por dia
+        registros = transformar_dados(dados)
+
+        #CARREGAR
+        #salva no PostgreSQL e atualiza dias que ja existem
+        quantidade = salvar_registros(registros)
+
+        #so anuncia o sucesso depois da confirmação no banco
+        return{
+            "mensagem": "importação concluída.",
+            "inicio": inicio,
+            "fim": fim,
+            "registros_processados": quantidade,
+        }
+
+    except requests.exceptions.RequestException as erro:
+        print(f"Erro ao consultar o Open-Meteo: {erro}")
+
+        raise HTTPException(
+            status_code=502,
+            detail="Não foi possivel obter os dados do Open-Meteo.",
+        ) from erro
+
+    except (KeyError, IndexError, TypeError, ValueError) as erro:
+        print(f"Erro ao transformar os dados: {erro}")
+
+        raise HTTPException(
+            status_code=502,
+            detail="Os dados recebidos não puderam ser processados.",
+        ) from erro
+
+    except psycopg.Error as erro:
+        print(f"Erro ao salvar no banco: {erro}")
+
+        raise HTTPException(
+            status_code=503,
+            detail="Não foi possível salvar os dados no banco.",
+        ) from erro
