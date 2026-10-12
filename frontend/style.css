@@ -208,3 +208,16 @@ tbody tr:hover {
     margin: 0;
     font-size: 14px;
 }
+
+/* Destaca o valor da temperatura. */
+#temperatura-maxima {
+    margin: 8px 0;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+/* Apresenta a data abaixo do valor. */
+#data-maxima {
+    margin: 0;
+    font-size: 14px;
+}

@@ -6,6 +6,8 @@ const mensagem = document.getElementById("mensagem")
 const tabela = document.getElementById("registros")
 const chuvaTotal = document.getElementById("chuva-total")
 const coberturaChuva = document.getElementById("cobertura-chuva")
+const temperaturaMaxima = document.getElementById("temperatura-maxima")
+const dataMaxima = document.getElementById("data-maxima")
 
 //localiza o botão dentro do formulario
 const botao = formulario.querySelector('button[type="submit"]')
@@ -30,6 +32,10 @@ formulario.addEventListener("submit", async function (evento) {
     //limpa o indicador para não mostrar valores da consulta anterior
     chuvaTotal.textContent = "—"
     coberturaChuva.textContent = "Sem resultado para esta consulta."
+
+    //limpa o cartão para não manter resultados da consulta anterior
+    temperaturaMaxima.textContent = "—"
+    dataMaxima.textContent = "Sem resultado para esta consulta."
 
     //".value" recupera o valor preenchido no campo
     const inicio = campoInicio.value
@@ -98,6 +104,46 @@ formulario.addEventListener("submit", async function (evento) {
             chuvaTotal.textContent = "Sem dado"
             coberturaChuva.textContent = "Não há valores de precipitação disponíveis."
         }
+        
+        //"null" fala que ainda não encontramos uma temperatura valida
+        let diaMaisQuente = null
+
+        for(const registro of dados.registros){
+            //ignora dias sem informações de temperatura maxima
+            if(registro.temperatura_maxima !== null){
+                //o primeiro dia mais quente vira referencia
+                if(diaMaisQuente === null){
+                    diaMaisQuente = registro
+                
+            //nos proximos registros compara a maxima com a referencia
+            //se tiver uma maior guarda o registro inteiro
+            //assim mantem tanto a temperatura quanto sua data
+                } else if(
+                    registro.temperatura_maxima > diaMaisQuente.temperatura_maxima
+                ){
+                    diaMaisQuente = registro
+                }
+            }
+        }
+
+        if(diaMaisQuente !== null){
+            //reutiliza a função que exibe uma casa decimal
+            temperaturaMaxima.textContent = `${formatarNumero(diaMaisQuente.temperatura_maxima)} °C`
+        
+            //a API envia data no formato AAAA-MM-DD
+            //"split("-")" separa o texto em uma lista
+            //ex: ["2025", "01", "03"]
+            const partesData = diaMaisQuente.data.split("-")
+
+            //as posições começam em 0
+            //[0] é o ano, [1] mes e [2] dia
+            dataMaxima.textContent = `Registrada em ${partesData[2]}/${partesData[1]}/${partesData[0]}.`
+        } else{
+            //pode haver registros, mas nenhuma temperatura disponivel
+            temperaturaMaxima.textContent = "Sem dado"
+            dataMaxima.textContent = "Não há temperaturas máximas disponíveis."
+        }
+
         //percorre os elementos de uma lista
         //a cada repetição, "registro" contem os dados de um dia
         for(const registro of dados.registros){
@@ -133,8 +179,8 @@ formulario.addEventListener("submit", async function (evento) {
         //"message" contem a descrição do erro
         mensagem.textContent = `Erro: ${erro.message}`
     } finally{
-    //executa ao terminar o try/catch, e tambem um return dentro do try
-    //reativa o botão para permitir outra consulta
-    botao.disabled = false
-}
+        //executa ao terminar o try/catch, e tambem um return dentro do try
+        //reativa o botão para permitir outra consulta
+        botao.disabled = false
+    }
 });

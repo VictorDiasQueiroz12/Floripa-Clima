@@ -24,19 +24,30 @@
             <button type="submit">Consultar</button>
         </form>
 
-        <!--Mostrara uma mensagem de carregamento, sucesso ou erro-->
+        <!--mostrara uma mensagem de carregamento, sucesso ou erro-->
         <p id="mensagem" role="status">
             A consulta será conectada na próxima etapa.
         </p>
 
+        <!--mostra um resumo dos registros encontrados-->
         <section class="indicador" aria-labelledby="titulo-chuva">
             <h2 id="titulo-chuva">Precipitação acumulada</h2>
+            <!--Js atualizara o valor e cobertura dos dados-->
             <p id="chuva-total">—</p>
             <p id="cobertura-chuva">Consulte um período para vizualizar.</p>
         </section>
 
+        <!--mostra a maior temperatura máxima entre os registros consultados-->
+        <section class="indicador" aria-labelledby="titulo-temperatura">
+            <!--Js preenchera a tempetura e a data-->
+            <h2 id="titulo-temperatura">Maior temperatura máxima</h2>
+            <p id="temperatura-maxima">—</p>
+            <p id="data-maxima">Consulte um período para vizualizar.</p>
+        </section>
+
+        </section>
         <table>
-            <!--Cabeçalho da tabela-->
+            <!--cabeçalho da tabela-->
             <thead>
                 <tr>
                     <th scope="col">Data</th>
