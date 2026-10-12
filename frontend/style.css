@@ -183,3 +183,28 @@ tbody tr:hover {
         align-items: stretch;
     }
 }
+
+/* O ponto seleciona elementos pela classe, em vez do id. */
+.indicador {
+    margin-bottom: 24px;
+    padding: 20px;
+    background-color: #e0f2fe;
+    border-radius: 8px;
+}
+
+.indicador h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #0c4a6e;
+}
+
+#chuva-total {
+    margin: 8px 0;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+#cobertura-chuva {
+    margin: 0;
+    font-size: 14px;
+}

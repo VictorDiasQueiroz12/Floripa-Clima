@@ -4,6 +4,8 @@ const campoInicio = document.getElementById("inicio")
 const campoFim = document.getElementById("fim")
 const mensagem = document.getElementById("mensagem")
 const tabela = document.getElementById("registros")
+const chuvaTotal = document.getElementById("chuva-total")
+const coberturaChuva = document.getElementById("cobertura-chuva")
 
 //localiza o botão dentro do formulario
 const botao = formulario.querySelector('button[type="submit"]')
@@ -24,6 +26,10 @@ formulario.addEventListener("submit", async function (evento) {
     evento.preventDefault()
     //remove as linhas da consulta anterior
     tabela.replaceChildren()
+
+    //limpa o indicador para não mostrar valores da consulta anterior
+    chuvaTotal.textContent = "—"
+    coberturaChuva.textContent = "Sem resultado para esta consulta."
 
     //".value" recupera o valor preenchido no campo
     const inicio = campoInicio.value
@@ -71,6 +77,27 @@ formulario.addEventListener("submit", async function (evento) {
             return
         }
 
+        //"let" deixa alterar o valor da variavel durante a soma
+        let acumulado = 0
+        let diasComChuvaDisponivel = 0
+
+        for(const registro of dados.registros){
+            //inclui 0 na soma, mas ignora dados ausentes
+            if(registro.precipitacao !== null){
+                acumulado += registro.precipitacao
+                diasComChuvaDisponivel += 1
+            }
+        }
+        if(diasComChuvaDisponivel > 0){
+            chuvaTotal.textContent = `${formatarNumero(acumulado)} mm`
+
+            //informa quantos registros possuem dados de precipitação
+            //se houver dados ausentes, a soma representa apenas os disponiveis
+            coberturaChuva.textContent = `Dados disponíveis em ${diasComChuvaDisponivel} de ${dados.total} registros.`
+        } else{
+            chuvaTotal.textContent = "Sem dado"
+            coberturaChuva.textContent = "Não há valores de precipitação disponíveis."
+        }
         //percorre os elementos de uma lista
         //a cada repetição, "registro" contem os dados de um dia
         for(const registro of dados.registros){
@@ -100,11 +127,12 @@ formulario.addEventListener("submit", async function (evento) {
         } 
         //exibe a quantidade de registros retornada pela API
         mensagem.textContent = `${dados.total} registros encontrados.`
+
     }catch (erro){
         //recebe falhas de conexão, erros ao interpretar o JSON e erros lançados com throw dentro do try
         //"message" contem a descrição do erro
         mensagem.textContent = `Erro: ${erro.message}`
-} finally{
+    } finally{
     //executa ao terminar o try/catch, e tambem um return dentro do try
     //reativa o botão para permitir outra consulta
     botao.disabled = false
