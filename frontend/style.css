@@ -1,0 +1,185 @@
+/* O seletor * aplica esta regra a todos os elementos. */
+* {
+    /* Faz largura e altura incluírem o preenchimento e as bordas.
+       Isso facilita controlar o tamanho dos elementos. */
+    box-sizing: border-box;
+}
+
+body {
+    /* Remove a margem que o navegador coloca por padrão. */
+    margin: 0;
+
+    /* Define a fonte. Se Arial não estiver disponível,
+       o navegador usa outra fonte sem serifa. */
+    font-family: Arial, sans-serif;
+
+    /* Cor do fundo e cor padrão dos textos. */
+    background-color: #f1f5f9;
+    color: #1e293b;
+
+    /* Aumenta o espaço entre as linhas dos textos. */
+    line-height: 1.6;
+}
+
+main {
+    /* Ocupa 92% da largura disponível,
+       mas nunca ultrapassa 1000 pixels. */
+    width: 92%;
+    max-width: 1000px;
+
+    /* 40px cria espaço acima e abaixo.
+       auto centraliza horizontalmente o bloco. */
+    margin: 40px auto;
+
+    /* Cria espaço interno entre o conteúdo e a borda do bloco. */
+    padding: 28px;
+
+    background-color: #ffffff;
+
+    /* Arredonda os cantos. */
+    border-radius: 12px;
+
+    /* Sombra: deslocamento horizontal, vertical,
+       desfoque e cor com transparência. */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+    /* Permite rolagem horizontal se a tabela ficar
+       mais larga que o espaço disponível. */
+    overflow-x: auto;
+}
+
+h1 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #0369a1;
+    font-size: 32px;
+}
+
+/* # seleciona um elemento pelo seu id.
+   Esta regra vale para o formulário id="filtros". */
+#filtros {
+    /* Flex organiza os elementos lado a lado. */
+    display: flex;
+
+    /* Permite quebrar para outra linha quando faltar espaço. */
+    flex-wrap: wrap;
+
+    /* Alinha os elementos verticalmente ao centro. */
+    align-items: center;
+
+    /* Define o espaço entre os elementos. */
+    gap: 12px;
+
+    margin-top: 24px;
+    padding: 16px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+}
+
+/* Seleciona os labels que estão dentro do formulário. */
+#filtros label {
+    font-weight: bold;
+}
+
+input,
+button {
+    /* Faz os campos e botões usarem a fonte do elemento pai. */
+    font: inherit;
+}
+
+input[type="date"] {
+    padding: 8px 10px;
+    border: 1px solid #94a3b8;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #1e293b;
+}
+
+button {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 6px;
+    background-color: #0369a1;
+    color: #ffffff;
+
+    /* Mostra o cursor de mão quando o botão está disponível. */
+    cursor: pointer;
+}
+
+/* :hover aplica a regra quando o mouse está sobre o botão.
+   :not(:disabled) limita isso aos botões habilitados. */
+button:hover:not(:disabled) {
+    background-color: #075985;
+}
+
+/* O JavaScript desativa o botão durante a consulta.
+   Este seletor muda sua aparência nesse estado. */
+button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* Mostra um contorno ao navegar pelos controles com o teclado. */
+input:focus-visible,
+button:focus-visible {
+    outline: 3px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+#mensagem {
+    /* Reserva espaço para a mensagem mesmo quando está vazia. */
+    min-height: 26px;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+table {
+    width: 100%;
+
+    /* Une as bordas de células vizinhas. */
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+
+    /* Evita que o conteúdo de uma célula quebre em várias linhas. */
+    white-space: nowrap;
+}
+
+thead {
+    background-color: #e0f2fe;
+    color: #0c4a6e;
+}
+
+/* Colore as linhas pares para facilitar a leitura da tabela. */
+tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+tbody tr:hover {
+    background-color: #f0f9ff;
+}
+
+/* Estas regras só são aplicadas em telas de até 600px. */
+@media (max-width: 600px) {
+    main {
+        margin: 20px auto;
+        padding: 16px;
+    }
+
+    h1 {
+        font-size: 26px;
+    }
+
+    #filtros {
+        /* No celular, coloca os elementos um abaixo do outro. */
+        flex-direction: column;
+
+        /* Faz os elementos ocuparem a largura do formulário. */
+        align-items: stretch;
+    }
+}
