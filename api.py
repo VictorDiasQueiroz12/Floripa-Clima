@@ -6,6 +6,7 @@ from psycopg.rows import dict_row  #faz cada linha consultada virar um dicionari
 from dotenv import load_dotenv  #carrega as configurações do ".env"
 from datetime import date  #representa datas sem horários
 from fastapi.responses import FileResponse #permite devolver um arquivo como resposta de uma rota
+from fastapi.staticfiles import StaticFiles #permite servir arquivos estaticos como JS e CSS
 
 pasta_projeto = Path(__file__).resolve().parent
 load_dotenv(pasta_projeto / ".env")
@@ -15,6 +16,13 @@ load_dotenv(pasta_projeto / ".env")
 #o titulo aparece automaticamente na documentação
 app = FastAPI(title="Floripa Clima")
 
+#liga o endereço "/static" a pasta frontend
+#uma requisição para "/static/script.js" entrega frontend/script.js
+app.mount(
+    "/static",
+    StaticFiles(directory=pasta_projeto / "frontend"),
+    name="static",
+)
 
 #"GET" é usado para consultar informações
 @app.get("/saude")
