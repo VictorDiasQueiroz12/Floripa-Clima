@@ -8,10 +8,11 @@ from datetime import date  #representa datas sem horários
 from fastapi.responses import FileResponse #permite devolver um arquivo como resposta de uma rota
 from fastapi.staticfiles import StaticFiles #permite servir arquivos estaticos como JS e CSS
 import requests #permite tratar falhas ao consultar o Open-Meteo
-from main import extrair_dados, transformar_dados
-from carregar_dados import salvar_registros
+from .main import extrair_dados, transformar_dados
+from .carregar_dados import salvar_registros
 
-pasta_projeto = Path(__file__).resolve().parent
+#o primeiro "parent" chega na pasta backend e o segundo chega na raiz
+pasta_projeto = Path(__file__).resolve().parent.parent
 load_dotenv(pasta_projeto / ".env")
 
 

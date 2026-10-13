@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 #localiza a pasta onde "analise.py" está
-pasta_projeto = Path(__file__).resolve().parent
+pasta_projeto = Path(__file__).resolve().parent.parent
 
 #monta o caminho para o json salvo pelo "main.py"
 caminho_arquivo = pasta_projeto / "dados" / "clima_florianopolis.json"

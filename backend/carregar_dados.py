@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv #"load_dotenv" le o arquivo ".env" e disponibiliza suas configuraçoes para serem acessadas com "os.getenv()"
 
 #localiza a pasta onde esse arquivo esta
-pasta_projeto = Path(__file__).resolve().parent
+pasta_projeto = Path(__file__).resolve().parent.parent
 
 #carrega as configuraçoes do .env nas variaveis de ambiente
 load_dotenv(pasta_projeto / ".env")
