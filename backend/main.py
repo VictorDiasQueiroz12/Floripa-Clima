@@ -78,7 +78,7 @@ def executar_coleta():
         registros = transformar_dados(dados)
 
         #"__file__" é o caminho desse arquivo (main.py)
-        pasta_projetos = Path(__file__).resolve().parent
+        pasta_projetos = Path(__file__).resolve().parent.parent
 
         #define uma subpasta chamada "dados"
         pasta_dados = pasta_projetos / "dados"

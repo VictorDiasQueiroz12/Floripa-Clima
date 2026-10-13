@@ -23,13 +23,13 @@ Projeto desenvolvido para aprender na prática a integração entre Python, APIs
 
 Consulta de 01/01/2025 a 04/01/2025, com indicadores, gráfico de temperaturas e tabela diária.
 
-![Dashboard do Floripa Clima com quatro registros, indicadores, gráfico e tabela](frontend/floripa-clima-fotos/dashboard.png)
+![Dashboard do Floripa Clima com quatro registros, indicadores, gráfico e tabela](docs/dashboard.png)
 
 ### Página antes da consulta
 
 Tela inicial com os filtros e os botões de consulta e importação, antes de carregar os registros.
 
-![Página inicial do Floripa Clima antes de consultar os dados](frontend/floripa-clima-fotos/tela-inicial.png)
+![Página inicial do Floripa Clima antes de consultar os dados](docs/tela-inicial.png)
 
 ## Tecnologias
 

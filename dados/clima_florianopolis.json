@@ -9,64 +9,64 @@
     {
         "data": "2025-01-02",
         "temperatura_maxima": 28.0,
-        "temperatura_minima": 23.3,
+        "temperatura_minima": 23.2,
         "precipitacao": 0.4,
-        "amplitude_termica": 4.7
+        "amplitude_termica": 4.8
     },
     {
         "data": "2025-01-03",
         "temperatura_maxima": 34.3,
-        "temperatura_minima": 21.3,
-        "precipitacao": 0.2,
-        "amplitude_termica": 13.0
+        "temperatura_minima": 21.2,
+        "precipitacao": 0.4,
+        "amplitude_termica": 13.1
     },
     {
         "data": "2025-01-04",
         "temperatura_maxima": 28.1,
-        "temperatura_minima": 21.0,
-        "precipitacao": 0.6,
-        "amplitude_termica": 7.1
+        "temperatura_minima": 20.9,
+        "precipitacao": 0.4,
+        "amplitude_termica": 7.2
     },
     {
         "data": "2025-01-05",
         "temperatura_maxima": 27.0,
-        "temperatura_minima": 18.8,
+        "temperatura_minima": 18.7,
         "precipitacao": 1.3,
-        "amplitude_termica": 8.2
+        "amplitude_termica": 8.3
     },
     {
         "data": "2025-01-06",
         "temperatura_maxima": 26.0,
-        "temperatura_minima": 21.2,
+        "temperatura_minima": 21.1,
         "precipitacao": 0.6,
-        "amplitude_termica": 4.8
+        "amplitude_termica": 4.9
     },
     {
         "data": "2025-01-07",
         "temperatura_maxima": 26.4,
-        "temperatura_minima": 19.7,
+        "temperatura_minima": 19.6,
         "precipitacao": 0.7,
-        "amplitude_termica": 6.7
+        "amplitude_termica": 6.8
     },
     {
         "data": "2025-01-08",
-        "temperatura_maxima": 25.0,
-        "temperatura_minima": 20.6,
-        "precipitacao": 3.7,
-        "amplitude_termica": 4.4
+        "temperatura_maxima": 25.1,
+        "temperatura_minima": 20.5,
+        "precipitacao": 5.5,
+        "amplitude_termica": 4.6
     },
     {
         "data": "2025-01-09",
         "temperatura_maxima": 26.3,
         "temperatura_minima": 20.2,
-        "precipitacao": 5.3,
+        "precipitacao": 3.5,
         "amplitude_termica": 6.1
     },
     {
         "data": "2025-01-10",
         "temperatura_maxima": 27.7,
-        "temperatura_minima": 21.2,
-        "precipitacao": 0.3,
-        "amplitude_termica": 6.5
+        "temperatura_minima": 21.1,
+        "precipitacao": 0.4,
+        "amplitude_termica": 6.6
     }
 ]
