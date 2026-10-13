@@ -8,6 +8,7 @@ const chuvaTotal = document.getElementById("chuva-total")
 const coberturaChuva = document.getElementById("cobertura-chuva")
 const temperaturaMaxima = document.getElementById("temperatura-maxima")
 const dataMaxima = document.getElementById("data-maxima")
+const botaoImportar = document.getElementById("importar")
 
 //localiza o botão dentro do formulario
 const botao = formulario.querySelector('button[type="submit"]')
@@ -142,6 +143,7 @@ formulario.addEventListener("submit", async function (evento) {
 
     //evita novos envios enquanto a consulta esta sendo feita
     botao.disabled = true
+    botaoImportar.disabled = true
 
     try {
         //"URLSearchParams" organiza os parametros de uma URL
@@ -281,6 +283,61 @@ formulario.addEventListener("submit", async function (evento) {
     } finally {
         //executa ao terminar o try/catch, e tambem um return dentro do try
         //reativa o botão para permitir outra consulta
+        botao.disabled = false
+        botaoImportar.disabled = false
+    }
+});
+
+
+botaoImportar.addEventListener("click", async function () {
+    //verifica os campos obrigatorios do formulario, se faltar uma data o navegador mostra a indicação no campo
+    if (!formulario.reportValidity()) {
+        //encerra a funçao sem fazer requisição
+        return
+    }
+
+    //recupera as datas preenchidas nos inputs
+    const inicio = campoInicio.value
+    const fim = campoFim.value
+
+    if (inicio > fim) {
+        mensagem.textContent = "A data inicial deve ser anterior ou igual à final."
+        return
+    }
+
+    mensagem.textContent = "Importando dados do Open-Meteo..."
+
+    //desativa os dois botões enquanto o ETL está em andamento
+    botaoImportar.disabled = true
+    botao.disabled = true
+
+    try {
+        const parametros = new URLSearchParams({
+            inicio: inicio,
+            fim: fim,
+        })
+
+        //nessa rota precisa informar o metodo POST
+        //o periodo continua sendo enviado nos parametros da URL
+        const resposta = await fetch(`/importar?${parametros}`, {
+            method: "POST",
+        })
+
+        const dados = await resposta.json()
+
+        if (!resposta.ok) {
+            throw new Error(
+                dados.detail || "Não foi possível importar os dados."
+            )
+        }
+
+        mensagem.textContent = `Importação concluída: ${dados.registros_processados} registros processados. Clique em Consultar para atualizar o painel.`
+
+    } catch (erro) {
+        mensagem.textContent = `Erro: ${erro.message}`
+
+    } finally {
+        botaoImportar.disabled = false
         botao.disabled = false
     }
 });
