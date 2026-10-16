@@ -98,8 +98,8 @@ def listar_clima(
         #"row_factory=dict_row" faz os resultados serem dicionários
         #exemplo: {"data": ..., "temperatura_maxima": ...}
         with psycopg.connect(
-            host="127.0.0.1",
-            port=5433,
+            host=os.getenv("POSTGRES_HOST", "127.0.0.1"),
+            port=int(os.getenv("POSTGRES_PORT", "5433")),
             dbname=os.getenv("POSTGRES_DB"),
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),

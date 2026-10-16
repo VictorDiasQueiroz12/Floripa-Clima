@@ -19,9 +19,112 @@ services:
 
     #guarda os arquivos do banco em um volume persistente
     #desse jeito recriar um container não elimina esses dados
+    #usa o diretorio real dos dados do PostgreSQL
     volumes:
-      - postgres_data:/var/lib/postgresql/postgres_data
+      - postgres_data:/var/lib/postgresql/data
+
+    #verifica periodicamente se o PostgreSQL aceita conexões
+    healthcheck:
+      #CMD-SHELL executa o comando usando o shell do container
+      #pg_isready verifica a disponibilidade do PostgreSQL
+      #$$ deixa a variável ser expandida dentro do container
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+
+      #intervalo entre as verificações
+      interval: 5s
+
+      #tempo máximo de cada verificação
+      timeout: 5s
+
+      #quantidade de falhas consecutivas até marcar como unhealthy
+      retries: 12
+
+  migrations:
+    #constrói uma imagem usando o Dockerfile do backend
+    build:
+      #define a raiz do projeto como contexto de construção
+      #os caminhos de origem dos COPY partem dessa pasta
+      context: .
+      dockerfile: backend/Dockerfile
+
+    #disponibiliza as configurações do banco no container
+    env_file:
+      - .env
+
+    #essas configurações prevalecem sobre as mesmas chaves do env_file
+    environment:
+      #na rede do Compose, db é o endereço do serviço PostgreSQL
+      POSTGRES_HOST: db
+
+      #containers conversam pela porta interna do PostgreSQL
+      POSTGRES_PORT: "5432"
+
+    #aguarda o banco estar pronto antes de executar as migrations
+    depends_on:
+      db:
+        condition: service_healthy
+
+    #substitui o CMD do Dockerfile por este comando
+    #aplica as migrations pendentes e encerra o container
+    command:
+      - alembic
+      - -c
+      - /app/backend/alembic.ini
+      - upgrade
+      - head
+
+  backend:
+    #usa o mesmo Dockerfile do serviço de migrations
+    #mas mantém o CMD que inicia o Uvicorn
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+
+    depends_on:
+      #aguarda o banco aceitar conexões
+      db:
+        condition: service_healthy
+
+      #só inicia se as migrations terminarem sem erro
+      migrations:
+        condition: service_completed_successfully
+
+    #permite acessar a API e /docs diretamente pelo Windows
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  frontend:
+    #constrói a imagem do Nginx com os arquivos do frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+
+    #inicia depois que o container do backend estiver em execução
+    #isso não é uma verificação de saúde da API
+    depends_on:
+      backend:
+        condition: service_started
+
+    #computador: 8080 -> Nginx no container: 80
+    ports:
+      - "127.0.0.1:8080:80"
 
 #declara o volume utilizado pelo serviço db
+
 volumes:
   postgres_data:
+    # Reutiliza um volume que já existe no Docker.
+    # O Compose não criará outro volume para este nome lógico
+    external: true
+
+    #nome exato do volume que contém o banco atual
+    name: b56256110e11ff833f18efbd7222772e2e3848717ef75ad276d8ad3e4ac07a7d
