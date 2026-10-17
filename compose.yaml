@@ -121,10 +121,4 @@ services:
 #declara o volume utilizado pelo serviço db
 
 volumes:
-  postgres_data:
-    # Reutiliza um volume que já existe no Docker.
-    # O Compose não criará outro volume para este nome lógico
-    external: true
-
-    #nome exato do volume que contém o banco atual
-    name: b56256110e11ff833f18efbd7222772e2e3848717ef75ad276d8ad3e4ac07a7d
+  postgres_data: {}

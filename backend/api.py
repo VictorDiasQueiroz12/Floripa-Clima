@@ -5,8 +5,6 @@ import psycopg  #conexão com PostgreSQL
 from psycopg.rows import dict_row  #faz cada linha consultada virar um dicionario, com os nomes das colunas como chaves
 from dotenv import load_dotenv  #carrega as configurações do ".env"
 from datetime import date  #representa datas sem horários
-from fastapi.responses import FileResponse #permite devolver um arquivo como resposta de uma rota
-from fastapi.staticfiles import StaticFiles #permite servir arquivos estaticos como JS e CSS
 import requests #permite tratar falhas ao consultar o Open-Meteo
 from .main import extrair_dados, transformar_dados
 from .carregar_dados import salvar_registros
@@ -19,14 +17,6 @@ load_dotenv(pasta_projeto / ".env")
 #cria a aplicação e guarda na variável "app"
 #o titulo aparece automaticamente na documentação
 app = FastAPI(title="Floripa Clima")
-
-#liga o endereço "/static" a pasta frontend
-#uma requisição para "/static/script.js" entrega frontend/script.js
-app.mount(
-    "/static",
-    StaticFiles(directory=pasta_projeto / "frontend"),
-    name="static",
-)
 
 #"GET" é usado para consultar informações
 @app.get("/saude")
@@ -135,15 +125,6 @@ def listar_clima(
             status_code=503,
             detail="Não foi possível consultar os dados meteorológicos.",
         ) from erro
-
-
-#a rota "("/")" representa a pagina inicial da aplicação
-@app.get("/", response_class=FileResponse)
-def pagina():
-    #localiza o HTML dentro da pasta frontend
-    caminho_html = pasta_projeto / "frontend" / "index.html"
-    #envia o arquivo para o navegador, que interpreta o HTML
-    return FileResponse(caminho_html)
 
 #POST é usado porque esta operaçao grava dados no banco
 @app.post("/importar")

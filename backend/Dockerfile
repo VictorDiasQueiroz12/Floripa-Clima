@@ -38,9 +38,6 @@ RUN uv sync --project backend --locked --no-dev --no-install-project
 # Copia os arquivos Python e as migrations.
 COPY backend/ ./backend/
 
-# Temporariamente, mantém o frontend disponível também no backend,
-# pois o api.py atual ainda configura StaticFiles e FileResponse.
-COPY frontend/ ./frontend/
 
 # Documenta a porta utilizada pela aplicação.
 # EXPOSE não publica a porta no Windows; o Compose fará isso.

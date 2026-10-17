@@ -1,118 +1,128 @@
 # Floripa Clima
 
-Dashboard meteorológico de Florianópolis com um processo ETL executado pelo site. A aplicação consulta dados públicos do Open-Meteo, organiza os registros diários, salva no PostgreSQL e apresenta filtros, indicadores, tabela e gráfico.
+Dashboard meteorológico de Florianópolis com ETL executado pelo site. A aplicação consulta dados públicos do Open-Meteo, organiza os registros diários, salva no PostgreSQL e apresenta filtros, indicadores, tabela e gráfico.
 
-Projeto desenvolvido para aprender na prática a integração entre Python, APIs, SQL, Docker e desenvolvimento web.
+Projeto de aprendizagem em Python, integração de APIs, SQL, desenvolvimento web e execução com containers. O uso é local: não depende de hospedagem pública.
 
 ## Funcionalidades
 
 - Importação de dados históricos por intervalo de datas.
 - ETL iniciado pelo botão **Importar dados**.
 - Consulta dos registros armazenados por período.
-- Indicador de precipitação acumulada com cobertura dos dados disponíveis.
-- Indicador de maior temperatura máxima e sua data.
+- Precipitação acumulada e quantidade de registros com dados disponíveis.
+- Maior temperatura máxima do período e sua data.
 - Gráfico de temperaturas máximas e mínimas por dia.
 - Tabela dos registros consultados.
-- Atualização de registros existentes sem duplicar a mesma localidade, fonte e data.
-- Validação de datas e tratamento de falhas da API externa e do banco.
-- Documentação interativa das rotas em `/docs`.
+- Reimportação com atualização dos dados existentes, sem duplicar localidade, fonte e data.
+- Validação de datas e tratamento de falhas de consulta e gravação.
+- Criação e atualização da estrutura do banco com Alembic.
+- Inicialização dos serviços pelo Docker Compose.
 
 ## Imagens da aplicação
 
 ### Dashboard com dados consultados
 
-Consulta de 01/01/2025 a 04/01/2025, com indicadores, gráfico de temperaturas e tabela diária.
+Consulta de 01/01/2025 a 04/01/2025, com indicadores, gráfico e tabela diária.
 
-![Dashboard do Floripa Clima com quatro registros, indicadores, gráfico e tabela](docs/dashboard.png)
+![Dashboard do Floripa Clima com indicadores, gráfico e tabela](docs/dashboard.png)
 
 ### Página antes da consulta
 
-Tela inicial com os filtros e os botões de consulta e importação, antes de carregar os registros.
+Tela inicial com filtros e botões de consulta e importação.
 
-![Página inicial do Floripa Clima antes de consultar os dados](docs/tela-inicial.png)
+![Página inicial do Floripa Clima antes da consulta](docs/tela-inicial.png)
 
 ## Tecnologias
 
 | Tecnologia | Uso |
 |---|---|
-| Python | Extração, transformação, carga e backend |
-| FastAPI | Rotas HTTP e documentação interativa |
-| Uvicorn | Execução do servidor da aplicação |
-| Requests | Consulta à API do Open-Meteo |
-| Psycopg | Comunicação com o PostgreSQL |
-| python-dotenv | Leitura das configurações do `.env` |
-| PostgreSQL | Armazenamento dos registros meteorológicos |
-| Docker Compose | Execução do PostgreSQL com volume persistente |
-| HTML e CSS | Estrutura e apresentação do dashboard |
-| JavaScript | Requisições, filtros e atualização da interface |
+| Python 3.14 | Backend e ETL |
+| FastAPI e Uvicorn | Rotas HTTP e servidor da API |
+| Requests | Consulta ao Open-Meteo |
+| Psycopg | Consultas e gravação no PostgreSQL |
+| SQLAlchemy e Alembic | Conexão das migrations e versionamento da estrutura do banco |
+| uv | Gerenciamento das dependências e do ambiente Python |
+| PostgreSQL 16 | Armazenamento persistente |
+| Nginx | Entrega do frontend e proxy reverso para a API |
+| Docker e Docker Compose | Construção e execução dos serviços |
+| HTML, CSS e JavaScript | Interface e interação com a API |
 | Chart.js | Gráfico de temperaturas |
+| python-dotenv | Leitura de configurações locais |
 
-O PostgreSQL roda em um container. Nesta versão, o backend Python é executado no computador e serve também os arquivos do frontend.
+O backend declara Python `>=3.14` em `backend/pyproject.toml`. A imagem do backend utiliza Python 3.14. As dependências resolvidas estão em `backend/uv.lock`.
 
-## Como o ETL funciona
+## Arquitetura
 
-1. **Extração:** `extrair_dados(inicio, fim)` consulta o Open-Meteo para um ponto representativo do centro de Florianópolis.
-2. **Transformação:** `transformar_dados(dados)` combina as listas recebidas em registros por dia e calcula a amplitude térmica quando existem as duas temperaturas.
-3. **Carga:** `salvar_registros(registros)` grava no PostgreSQL. O `ON CONFLICT` atualiza os dados caso a combinação de localidade, fonte e data já exista.
+| Serviço | Responsabilidade | Acesso |
+|---|---|---|
+| `frontend` | Nginx entrega HTML, CSS e JavaScript e encaminha `/clima`, `/importar` e `/saude` | `127.0.0.1:8080` |
+| `backend` | FastAPI consulta o banco e executa o ETL | `127.0.0.1:8000` |
+| `db` | PostgreSQL armazena os registros | `127.0.0.1:5433` no computador; `db:5432` na rede interna |
+| `migrations` | Executa `alembic upgrade head` e encerra | Sem porta publicada |
 
-O botão **Importar dados** chama `POST /importar`, que aguarda o término do ETL antes de responder. O botão **Consultar** chama `GET /clima` e atualiza os indicadores, a tabela e o gráfico.
+O Compose aguarda o banco ficar saudável, executa as migrations e inicia o backend após sua conclusão com sucesso. O frontend inicia depois do container do backend.
 
-O fluxo do site passa diretamente da API externa para o banco, sem depender do JSON local. Os scripts de terminal continuam permitindo salvar e analisar um arquivo JSON.
+O JavaScript consulta caminhos relativos, como `/clima`. O Nginx encaminha a requisição ao FastAPI, que acessa o PostgreSQL. A API não entrega mais os arquivos do frontend.
+
+### Fluxo do ETL
+
+1. **Extração:** `extrair_dados(inicio, fim)` consulta o histórico do Open-Meteo.
+2. **Transformação:** `transformar_dados(dados)` organiza um registro por dia e calcula a amplitude térmica quando há máxima e mínima.
+3. **Carga:** `salvar_registros(registros)` grava com `INSERT ... ON CONFLICT ... DO UPDATE`.
+
+O fluxo do site passa diretamente da fonte para o banco. Não depende do JSON utilizado pelos scripts de terminal. A requisição de importação aguarda o ETL terminar antes de responder.
 
 ## Organização dos arquivos
 
 | Caminho | Responsabilidade |
 |---|---|
-| `api.py` | Rotas de consulta, importação e entrega do frontend |
-| `main.py` | Funções de extração e transformação; coleta pelo terminal |
-| `carregar_dados.py` | Função de carga; importação do JSON pelo terminal |
-| `analise.py` | Leitura e análise do JSON pelo terminal |
-| `schema.sql` | Criação da tabela e suas restrições |
-| `compose.yaml` | Configuração do PostgreSQL no Docker |
-| `requirements.txt` | Dependências Python com versões |
-| `.env` | Credenciais locais; não deve ser enviado ao GitHub |
-| `.gitignore` | Arquivos e pastas ignorados pelo Git |
+| `backend/api.py` | Rotas de saúde, consulta e importação |
+| `backend/main.py` | Extração, transformação e coleta pelo terminal |
+| `backend/carregar_dados.py` | Carga dos registros e importação de JSON pelo terminal |
+| `backend/analise.py` | Análise do JSON local |
+| `backend/schema.sql` | Referência SQL da estrutura inicial; não é executado na instalação com Compose |
+| `backend/alembic.ini` | Configuração do Alembic |
+| `backend/migrations/env.py` | Conexão e execução das migrations |
+| `backend/migrations/versions/` | Histórico de alterações na estrutura do banco |
+| `backend/pyproject.toml` | Informações e dependências do backend |
+| `backend/uv.lock` | Versões resolvidas das dependências |
+| `backend/Dockerfile` | Construção da imagem Python com uv |
 | `frontend/index.html` | Estrutura da página |
-| `frontend/style.css` | Estilos da página |
-| `frontend/script.js` | Interação com a API e construção do gráfico |
-| `dados/clima_florianopolis.json` | Arquivo gerado pela coleta de terminal |
-| `docs/images/` | Prints usados neste README |
+| `frontend/style.css` | Estilos |
+| `frontend/script.js` | Consultas, importações, indicadores e gráfico |
+| `frontend/nginx.conf` | Arquivos estáticos e encaminhamento para a API |
+| `frontend/Dockerfile` | Construção da imagem do frontend |
+| `compose.yaml` | Definição dos quatro serviços e do volume padrão |
+| `compose.override.yaml` | Ajuste local opcional; ignorado pelo Git |
+| `.dockerignore` | Arquivos excluídos do contexto de construção |
+| `.env` | Credenciais locais; ignorado pelo Git |
+| `dados/clima_florianopolis.json` | Dados gerados pela coleta de terminal |
+| `docs/` | Imagens deste README |
 
 ## Pré-requisitos
 
-- Python 3.10 ou superior, devido à sintaxe `date | None`.
-- Docker Desktop funcionando com containers Linux e Docker Compose.
-- Git, se for clonar pelo terminal.
-- Internet para baixar dependências, consultar o Open-Meteo e carregar o Chart.js pelo CDN.
-- pgAdmin 4, opcional, para visualizar e administrar o banco.
+Para executar tudo com Docker:
 
-As instruções a seguir usam o PowerShell no Windows. As versões das bibliotecas estão registradas em `requirements.txt`.
+- Docker Desktop iniciado, com containers Linux e Docker Compose disponível.
+- Internet para baixar imagens e dependências, consultar o Open-Meteo e carregar o Chart.js pelo CDN.
+- Git, caso utilize a clonagem pelo terminal.
+
+Não é necessário instalar Python, uv, Nginx ou PostgreSQL no computador para a execução completa em containers. O pgAdmin é opcional.
+
+Os exemplos abaixo usam PowerShell no Windows.
 
 ## Instalação e primeira execução
 
-### 1. Obter o projeto
-
-Na página deste repositório, clique em **Code** e copie a URL HTTPS. Execute `git clone` seguido dessa URL e entre na pasta criada:
+### 1. Clonar o repositório
 
 ```powershell
-git clone <URL-HTTPS-DESTE-REPOSITORIO>
-cd floripa-clima
+git clone https://github.com/VictorDiasQueiroz12/Floripa-Clima.git
+cd Floripa-Clima
 ```
 
-Substitua `<URL-HTTPS-DESTE-REPOSITORIO>` pela URL real, sem os sinais `<` e `>`. Também é possível baixar o ZIP pelo GitHub e abrir a pasta extraída no VS Code.
+### 2. Criar o `.env`
 
-### 2. Criar o ambiente virtual e instalar as dependências
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
-
-Os comandos usam diretamente o Python da `.venv`; sua ativação no PowerShell não é obrigatória.
-
-### 3. Configurar o `.env`
-
-Crie um arquivo chamado `.env` na pasta principal e copie este exemplo:
+Na raiz, ao lado de `compose.yaml`, crie um arquivo `.env`:
 
 ```dotenv
 POSTGRES_USER=floripa
@@ -120,220 +130,300 @@ POSTGRES_PASSWORD=troque_por_uma_senha_local
 POSTGRES_DB=floripa_clima
 ```
 
-Escolha uma senha local antes de iniciar o banco. O Docker e o Python leem essas mesmas configurações.
+Escolha uma senha antes da primeira inicialização. O exemplo fica neste README; não é necessário um `.env.example` separado.
 
-O `.gitignore` deve conter:
+O Compose fornece `POSTGRES_HOST=db` e `POSTGRES_PORT=5432` ao backend e às migrations. Quando executado diretamente no Windows, o Python usa por padrão `127.0.0.1:5433`.
+
+Mantenha no `.gitignore`:
 
 ```gitignore
 .venv/
 __pycache__/
 .env
+compose.override.yaml
 ```
 
-O exemplo das variáveis fica neste README; não é necessário um `.env.example` separado.
+### 3. Construir e iniciar
 
-### 4. Iniciar o PostgreSQL
-
-Abra o Docker Desktop e aguarde sua inicialização. Na pasta do projeto, execute:
+Abra o Docker Desktop e, na raiz do repositório, execute:
 
 ```powershell
+docker compose config --quiet
+docker compose up --build -d
+```
+
+Na primeira execução, o Compose cria o volume do banco e o Alembic cria a estrutura automaticamente. **Não execute `schema.sql` manualmente nesse fluxo.**
+
+Confira os serviços:
+
+```powershell
+docker compose ps -a
+```
+
+| Serviço | Estado esperado |
+|---|---|
+| `db` | Up e healthy |
+| `migrations` | Exited (0) |
+| `backend` | Up |
+| `frontend` | Up |
+
+`migrations` terminar com código zero indica sucesso: esse serviço não precisa permanecer executando.
+
+### 4. Acessar
+
+| Endereço | Função |
+|---|---|
+| [http://127.0.0.1:8080/](http://127.0.0.1:8080/) | Dashboard |
+| [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) | Documentação interativa da API |
+| [http://127.0.0.1:8080/saude](http://127.0.0.1:8080/saude) | Resposta de saúde pelo Nginx |
+| [http://127.0.0.1:8000/clima](http://127.0.0.1:8000/clima) | Dados em JSON diretamente pela API |
+
+Abrir `/` na porta 8000 retorna 404: a página é servida pelo Nginx na porta 8080. A documentação `/docs` é acessada diretamente na porta 8000.
+
+### 5. Importar e consultar
+
+1. Selecione um período, por exemplo **01/01/2025 a 10/01/2025**.
+2. Clique em **Importar dados** e espere a conclusão.
+3. Clique em **Consultar** para atualizar tabela, cartões e gráfico.
+4. Reimporte o mesmo período para verificar que a quantidade de registros não aumenta.
+
+O banco novo começa vazio. Consultar não importa dados. Durante a importação, o painel mantém o resultado anterior até a próxima consulta.
+
+## Volumes e configuração local
+
+O `compose.yaml` padrão declara:
+
+```yaml
+volumes:
+  postgres_data: {}
+```
+
+O serviço `db` monta esse volume em `/var/lib/postgresql/data`. O nome físico é definido pelo Compose a partir do nome do projeto.
+
+Para uma instalação nova, **não crie um override**. O volume será criado automaticamente.
+
+Quem já possui dados em outro volume pode utilizar `compose.override.yaml` para referenciar um volume externo existente. Esse ajuste é específico do computador e não vai para o GitHub. Os comandos comuns do Compose carregam o override automaticamente quando ele existe na raiz.
+
+O override não copia os dados: ele seleciona o volume. Não reutilize o volume de outro ambiente para um teste de banco vazio. Antes de alterar um volume existente, identifique seu conteúdo e faça backup.
+
+As credenciais do PostgreSQL são configuradas na primeira inicialização de um volume vazio. Mudar a senha no `.env` não muda a senha de um banco já inicializado.
+
+## Comandos do dia a dia
+
+```powershell
+# Inicia os serviços existentes.
 docker compose up -d
-docker compose ps
+
+# Reconstrói as imagens após mudanças no código ou nas dependências.
+docker compose up --build -d
+
+# Mostra o estado, incluindo o serviço de migrations encerrado.
+docker compose ps -a
+
+# Mostra os logs recentes.
+docker compose logs --tail 80 backend migrations frontend
+
+# Para os serviços e preserva os dados.
+docker compose stop
+
+# Remove os containers e a rede, preservando o volume padrão.
+docker compose down
 ```
 
-O serviço `db` deve aparecer como `Up`. Confira os logs, se necessário:
+O código é copiado para as imagens no build. Alterações nos arquivos locais exigem reconstrução da imagem correspondente. Depois, atualize o navegador com Ctrl + F5 se necessário.
+
+`docker compose down -v` pode remover o volume gerenciado pelo Compose e apagar o banco. Não use esse comando como encerramento comum.
+
+## Migrations com Alembic
+
+A primeira revisão, `4e5f2211361d`, cria `public.weather_daily`. O serviço `migrations` aplica as revisões pendentes com `upgrade head` antes da inicialização do backend.
+
+Com os serviços funcionando:
 
 ```powershell
-docker compose logs db
+# Consulta a revisão registrada no banco.
+docker compose exec backend alembic -c /app/backend/alembic.ini current
 ```
 
-Espere a mensagem `database system is ready to accept connections`.
-
-O PostgreSQL é acessado pelo computador em `127.0.0.1:5433`. Dentro do container, ele usa a porta `5432`. O volume `postgres_data` mantém os arquivos do banco entre recriações do container.
-
-### 5. Criar a tabela
-
-A configuração atual não executa `schema.sql` automaticamente. Faça isso na primeira instalação.
-
-Pelo terminal PowerShell, envie o arquivo para o PostgreSQL:
+Para desenvolver uma nova migration, com uv instalado, execute a partir da raiz:
 
 ```powershell
-Get-Content -Raw -Encoding UTF8 .\schema.sql | docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+cd backend
+uv run alembic revision -m "descricao da alteracao"
+cd ..
 ```
 
-Como alternativa, conecte pelo pgAdmin:
+Preencha e revise `upgrade()` e `downgrade()` no arquivo gerado. O projeto utiliza migrations escritas manualmente; `target_metadata=None` não fornece modelos para autogeração.
 
-| Campo | Valor |
-|---|---|
-| Name | Floripa Clima Local |
-| Host name/address | `127.0.0.1` |
-| Port | `5433` |
-| Maintenance database | Valor de `POSTGRES_DB` |
-| Username | Valor de `POSTGRES_USER` |
-| Password | Senha definida em `POSTGRES_PASSWORD` |
-
-Abra o **Query Tool** do banco, cole todo o conteúdo de `schema.sql` e execute. Confira:
-
-```sql
-SELECT * FROM public.weather_daily;
-```
-
-A tabela estará vazia até a primeira importação.
-
-### 6. Iniciar a aplicação
+Depois, reconstrua e inicie os serviços para executar a nova revisão:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn api:app --reload
+docker compose up --build -d
 ```
 
-Mantenha o terminal aberto. Quando aparecer `Application startup complete`, acesse:
+O comando `stamp` apenas registra uma revisão, sem criar tabelas. Foi utilizado na adoção do banco antigo após conferência da estrutura; **não faz parte da instalação de um banco vazio nem substitui futuras migrations**. Um downgrade que remove uma tabela também remove seus registros.
 
-| Endereço | Uso |
-|---|---|
-| [http://127.0.0.1:8000/](http://127.0.0.1:8000/) | Dashboard |
-| [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) | Documentação e testes das rotas |
-| [http://127.0.0.1:8000/saude](http://127.0.0.1:8000/saude) | Verificação de resposta da API |
-| [http://127.0.0.1:8000/clima](http://127.0.0.1:8000/clima) | Registros armazenados |
+## Desenvolvimento com uv
 
-## Usando o dashboard
+O uv é necessário apenas para executar ou desenvolver o Python fora dos containers. As dependências são definidas no `pyproject.toml` e resolvidas no `uv.lock`; o projeto não usa mais `requirements.txt`.
 
-1. Selecione as datas inicial e final, por exemplo **01/01/2025 a 10/01/2025**.
-2. Clique em **Importar dados** e aguarde a mensagem de conclusão.
-3. Clique em **Consultar** para exibir o período na tabela, nos cartões e no gráfico.
-4. Altere o período e consulte novamente para explorar os dados já armazenados.
+Na raiz:
 
-A importação não atualiza automaticamente o painel. Durante o ETL, ele mantém a consulta anterior. Um período ainda não importado pode retornar zero registros.
-
-## Rotas
-
-| Método | Rota | Função |
-|---|---|---|
-| GET | `/` | Entrega a página HTML |
-| GET | `/saude` | Indica que a API está respondendo; não testa o banco |
-| GET | `/clima` | Consulta os registros; aceita `inicio` e `fim` opcionais |
-| POST | `/importar` | Executa o ETL; exige `inicio` e `fim` |
-| GET | `/docs` | Documentação interativa |
-| GET | `/static/...` | Entrega os arquivos da pasta `frontend` |
-
-Exemplo de consulta:
-
-```text
-http://127.0.0.1:8000/clima?inicio=2025-01-03&fim=2025-01-07
+```powershell
+uv sync --project backend --locked
 ```
 
-Para testar a importação, use `POST /importar` em `/docs`. Abrir a URL na barra do navegador envia GET e não executa a importação.
+O ambiente fica em `backend/.venv` e não deve ser versionado. Para adicionar uma dependência:
 
-### Validações da importação
+```powershell
+uv add --project backend nome-da-biblioteca
+```
 
-- Data inicial anterior ou igual à final.
-- Data final anterior ao dia atual do ambiente do servidor.
-- Máximo de 366 dias por execução.
-- Validação de formato de data pelo FastAPI.
+Versione tanto `pyproject.toml` quanto `uv.lock`.
 
-Datas históricas muito recentes podem ainda não estar disponíveis na fonte.
+### Scripts de terminal
 
-## Modelo de dados e indicadores
-
-A tabela `weather_daily` armazena identificador, localidade, fonte, data, temperaturas máxima e mínima, precipitação e instante de criação.
-
-| Regra | Comportamento |
-|---|---|
-| Chave única | Uma linha por localidade, fonte e data |
-| Valores ausentes | Permanecem `NULL` no banco e `null` no JSON |
-| Precipitação | Não permite valores negativos |
-| Temperaturas | Quando ambas existem, máxima não pode ser menor que mínima |
-| Reimportação | Atualiza os valores existentes com `ON CONFLICT` |
-
-A amplitude térmica é calculada como **máxima − mínima**. A consulta do banco calcula esse campo sem armazená-lo na tabela.
-
-O cartão de precipitação soma apenas valores disponíveis e informa sua cobertura entre os registros retornados. Essa contagem não garante que todos os dias do intervalo solicitado estejam armazenados. O gráfico mantém valores ausentes como lacunas.
-
-Em caso de empate na maior máxima, o painel mantém o primeiro registro encontrado, que é o mais antigo na ordenação por data.
-
-## Scripts de terminal
+Com o banco disponível na porta 5433 e as credenciais no `.env`:
 
 ```powershell
 # Consulta o período definido em executar_coleta() e salva o JSON.
-.\.venv\Scripts\python.exe .\main.py
+uv run --project backend python -m backend.main
 
-# Analisa os registros do JSON local.
-.\.venv\Scripts\python.exe .\analise.py
+# Analisa o JSON local.
+uv run --project backend python -m backend.analise
 
-# Importa o JSON local para o PostgreSQL.
-.\.venv\Scripts\python.exe .\carregar_dados.py
+# Importa o JSON local no PostgreSQL.
+uv run --project backend python -m backend.carregar_dados
 ```
 
-O JSON é substituído a cada coleta pelo terminal. Ele não é atualizado pela importação iniciada no site; por isso, `analise.py` pode analisar um período diferente do painel.
+O JSON é substituído a cada coleta pelo terminal e não é atualizado pela importação do site. Assim, a análise desse arquivo pode representar um período diferente do dashboard.
 
-## Reiniciar e encerrar
+### Executar a API no Windows
 
-Depois de fechar tudo, abra o Docker Desktop e execute na pasta do projeto:
+Para desenvolvimento do backend fora do Docker, libere primeiro sua porta:
 
 ```powershell
-docker compose up -d
-.\.venv\Scripts\python.exe -m uvicorn api:app --reload
+docker compose stop frontend backend
+uv run --project backend python -m uvicorn backend.api:app --reload
 ```
 
-Não é necessário recriar a tabela ou importar os dados novamente enquanto o volume persistente existir.
+Essa execução disponibiliza a API e `/docs` na porta 8000, sem servir o frontend. Para voltar ao fluxo completo, encerre o Uvicorn com Ctrl + C e execute `docker compose up -d`.
 
-Para encerrar a API, pressione **Ctrl + C** no terminal. Para parar o banco:
+## Rotas
 
-```powershell
-docker compose stop
+| Método | Rota | Responsável e finalidade |
+|---|---|---|
+| GET | `/` | Nginx entrega o HTML na porta 8080 |
+| GET | `/static/...` | Nginx entrega CSS e JavaScript na porta 8080 |
+| GET | `/saude` | API indica que está respondendo; não testa o banco |
+| GET | `/clima` | API consulta registros; `inicio` e `fim` são opcionais |
+| POST | `/importar` | API executa o ETL; `inicio` e `fim` são obrigatórios |
+| GET | `/docs` | Documentação interativa, diretamente na porta 8000 |
+
+Exemplo de consulta pelo Nginx:
+
+```text
+http://127.0.0.1:8080/clima?inicio=2025-01-03&fim=2025-01-07
 ```
 
-Esse comando preserva os dados. `docker compose down -v` remove os volumes e pode apagar o banco; não é o comando de encerramento comum do projeto.
+Para testar a importação na documentação, use **POST /importar → Try it out → Execute**. Abrir uma URL pela barra do navegador envia GET e não executa a importação.
 
-As variáveis de inicialização do PostgreSQL são aplicadas quando o volume está vazio. Alterar a senha no `.env` não altera automaticamente a senha de um banco já existente.
+### Validações
+
+- Data inicial anterior ou igual à final.
+- Data final da importação anterior ao dia atual do servidor.
+- Até 366 dias por importação.
+- Formato de datas validado pelo FastAPI.
+
+Dados históricos muito recentes podem não estar disponíveis na fonte.
+
+## Banco e indicadores
+
+| Campo | Tipo e regra |
+|---|---|
+| `id` | Inteiro, identidade gerada sempre e chave primária |
+| `localidade` | Texto obrigatório |
+| `fonte` | Texto obrigatório |
+| `data` | Data obrigatória |
+| `temperatura_maxima` e `temperatura_minima` | `NUMERIC(5, 1)`, permitem NULL |
+| `precipitacao` | `NUMERIC(8, 2)`, permite NULL e não aceita valores negativos |
+| `criado_em` | Timestamp com fuso, obrigatório e com padrão CURRENT_TIMESTAMP |
+
+Há uma chave única para localidade, fonte e data, e uma restrição para máxima maior ou igual à mínima quando ambas estão disponíveis.
+
+A amplitude térmica é **máxima − mínima**, calculada na consulta sem coluna adicional no banco. A precipitação acumulada considera apenas valores disponíveis. A cobertura exibida refere-se aos registros retornados, não garante a presença de todos os dias solicitados. O gráfico mantém valores ausentes como lacunas.
+
+Em caso de empate na maior máxima, o painel mantém o primeiro registro encontrado na ordenação por data.
 
 ## Verificações manuais
 
 | Teste | Resultado esperado |
 |---|---|
-| Importar 01/01 a 10/01/2025 e consultar | Dez registros nesse intervalo |
-| Reimportar o mesmo período | Quantidade de linhas permanece igual |
-| Consultar 03/01 a 07/01/2025 | Cinco registros e 3,4 mm acumulados |
-| Consultar 01/01 a 10/01/2025 | 13,6 mm e maior máxima de 34,3 °C em 03/01/2025, conforme os dados usados no desenvolvimento |
-| Consultar com datas invertidas | Mensagem de validação |
-| Consultar período sem registros armazenados | Mensagem de nenhum registro encontrado |
-| Trocar o período após uma consulta | Tabela, cartões e gráfico acompanham o filtro |
+| Iniciar em banco vazio | Migration cria a tabela e registra a revisão |
+| Importar e consultar 01 a 10/01/2025 | Dez registros |
+| Reimportar o mesmo período | Sem aumento da quantidade de linhas |
+| Consultar 03 a 07/01/2025 | Cinco registros; 3,4 mm nos dados utilizados no desenvolvimento |
+| Consultar 01 a 10/01/2025 | 13,6 mm; maior máxima de 34,3 °C em 03/01, nos dados utilizados no desenvolvimento |
+| Informar datas invertidas | Mensagem de validação |
+| Consultar período sem dados | Mensagem de nenhum registro encontrado |
+| Alterar o período | Tabela, cartões e gráfico acompanham o filtro |
+| Parar e iniciar os serviços | Registros preservados |
 
-Os exemplos numéricos refletem a resposta da fonte usada no desenvolvimento e podem mudar se ela revisar os dados.
+Os exemplos numéricos podem mudar caso a fonte revise os dados.
+
+### Testar um ambiente separado
+
+Pare o ambiente atual para liberar suas portas e use um nome de projeto diferente. O `-f compose.yaml` seleciona apenas a configuração padrão, sem o override local:
+
+```powershell
+docker compose stop
+docker compose -p floripa-clima-teste -f compose.yaml up --build -d
+docker compose -p floripa-clima-teste -f compose.yaml ps -a
+```
+
+No primeiro uso desse ambiente de teste, seu volume estará vazio. Nas próximas execuções, o volume de teste será reutilizado. Confira a importação e a consulta no navegador. Para voltar:
+
+```powershell
+docker compose -p floripa-clima-teste -f compose.yaml down
+docker compose up -d
+```
 
 ## Solução de problemas
 
 | Problema | O que conferir |
 |---|---|
-| Docker não conecta | Docker Desktop aberto e inicializado |
-| `relation weather_daily does not exist` | Executar `schema.sql` no banco correto |
-| Consulta retorna 503 | Banco ativo, credenciais e mensagem detalhada no terminal |
-| `0 placeholders but 2 parameters` | Usar `%s`, não `$s`, nas condições do SQL |
-| Página inicial retorna 404 | Rota `/` definida fora das demais funções |
-| CSS ou JavaScript retorna 404 | Configuração de `/static` e nomes dos arquivos |
-| Gráfico não aparece | CDN acessível, Chart.js antes de `script.js` e id `grafico-temperaturas` |
-| Alterações não aparecem | Salvar os arquivos e atualizar com Ctrl + F5 |
-| Importação retorna 502 | Falha da fonte externa, período indisponível ou resposta inesperada; verificar terminal |
+| Docker não conecta | Docker Desktop iniciado |
+| Porta já está em uso | Uvicorn local ou outro projeto ocupando 8000, 8080 ou 5433 |
+| Migrations falham | `docker compose logs --tail 80 migrations`; banco, credenciais e histórico de revisões |
+| Consulta ou importação retorna 503 | `docker compose logs --tail 80 backend` |
+| Importação tenta conectar em 127.0.0.1:5433 dentro do container | `api.py` e `carregar_dados.py` devem ler POSTGRES_HOST e POSTGRES_PORT; reconstruir a imagem |
+| Nginx retorna 502 | Backend disponível; verificar logs de frontend e backend e reiniciar frontend se necessário |
+| Página retorna 404 na porta 8000 | Usar o dashboard na porta 8080 |
+| CSS ou JavaScript retorna 404 | Arquivos copiados e caminho `/static/` configurado no Nginx |
+| Gráfico não aparece | Chart.js acessível pelo CDN, ordem dos scripts e id `grafico-temperaturas` |
+| Alterações não aparecem | Reconstruir a imagem correspondente e atualizar com Ctrl + F5 |
+| Importação retorna 502 pela API | Falha da fonte externa ou resposta não processável; consultar logs |
+| Volume externo não encontrado | Override aponta para um volume específico de outro computador |
 
 ## Fonte e limitações
 
 Fonte: [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api).
 
-Localização consultada: latitude **-27.5954**, longitude **-48.5480**. Fuso solicitado: **America/Sao_Paulo**.
+Ponto consultado: latitude **-27.5954**, longitude **-48.5480**. Fuso solicitado: **America/Sao_Paulo**.
 
-Os dados históricos são de **reanálise**, combinando modelos meteorológicos e observações. Não devem ser apresentados como medições diretas de uma estação instalada nesse ponto ou como valores específicos para cada bairro da cidade.
+O histórico é baseado em **reanálise**, combinando modelos e observações. Não representa diretamente uma medição de estação nesse ponto nem dados específicos de cada bairro.
 
-Dados disponibilizados pelo Open-Meteo sob [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Consulte também os [termos do serviço](https://open-meteo.com/en/terms) para uso da API. A licença dos dados não define a licença do código deste repositório.
+Dados disponibilizados pelo Open-Meteo sob [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Consulte os [termos do serviço](https://open-meteo.com/en/terms) para as condições de acesso à API. A licença dos dados não define a licença do código deste repositório.
 
-A aplicação atual é voltada ao uso local e educacional. Não possui autenticação, agendamento de importações, fila de tarefas ou histórico persistente de execuções do ETL. A consulta sem filtros retorna todos os registros e ainda não possui paginação.
+A aplicação é local e educacional. Não possui autenticação, agendamento, fila de tarefas ou histórico persistente de execuções do ETL. A importação é síncrona e consultas não possuem paginação. As portas publicadas ficam restritas a `127.0.0.1` na configuração atual.
 
 ## Próximas melhorias
 
-- Histórico de execuções do ETL com status e quantidade de registros.
+- Histórico de execuções do ETL.
 - Gráfico diário de precipitação.
-- Exportação de dados em CSV.
-- Validação da cobertura de todos os dias do intervalo solicitado.
-- Backend também executado pelo Docker Compose.
-- Testes automatizados de transformação e importação.
+- Exportação CSV.
+- Verificação da cobertura de dias do período solicitado.
+- Testes automatizados de transformação, rotas e importação.
 
 ## Autor
 
