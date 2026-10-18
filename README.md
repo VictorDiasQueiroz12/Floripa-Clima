@@ -130,7 +130,7 @@ POSTGRES_PASSWORD=troque_por_uma_senha_local
 POSTGRES_DB=floripa_clima
 ```
 
-Escolha uma senha antes da primeira inicialização. O exemplo fica neste README; não é necessário um `.env.example` separado.
+Escolha uma senha antes da primeira inicialização. 
 
 O Compose fornece `POSTGRES_HOST=db` e `POSTGRES_PORT=5432` ao backend e às migrations. Quando executado diretamente no Windows, o Python usa por padrão `127.0.0.1:5433`.
 
