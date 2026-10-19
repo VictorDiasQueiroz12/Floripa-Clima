@@ -43,7 +43,5 @@ COPY backend/ ./backend/
 # EXPOSE não publica a porta no Windows; o Compose fará isso.
 EXPOSE 8000
 
-# Comando executado ao iniciar o container.
-# 0.0.0.0 permite receber conexões de fora do próprio container.
-# Não usamos --reload nesta imagem.
-CMD ["python", "-m", "uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "8000"]
+# A configuração do servidor fica no módulo de inicialização da aplicação.
+CMD ["python", "-m", "backend.app"]

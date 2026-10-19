@@ -18,7 +18,7 @@ caminho_json = pasta_projeto / "dados" / "clima_florianopolis.json"
 
 #a biblioteca envia esses valores separadamente do SQL
 
-#"ON CONFLICT" trata a chave unica definida no "schema.sql": localizaçao + fonte + data
+#"ON CONFLICT" trata a chave unica definida na migration inicial: localizaçao + fonte + data
 
 #se o dia ja existir, atualizamos os valores em vez de duplicalo
 sql = """

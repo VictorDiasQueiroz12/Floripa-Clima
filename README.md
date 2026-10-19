@@ -76,11 +76,11 @@ O fluxo do site passa diretamente da fonte para o banco. Não depende do JSON ut
 
 | Caminho | Responsabilidade |
 |---|---|
+| `backend/app.py` | Inicialização do servidor e leitura de API_HOST e API_PORT |
 | `backend/api.py` | Rotas de saúde, consulta e importação |
 | `backend/main.py` | Extração, transformação e coleta pelo terminal |
 | `backend/carregar_dados.py` | Carga dos registros e importação de JSON pelo terminal |
 | `backend/analise.py` | Análise do JSON local |
-| `backend/schema.sql` | Referência SQL da estrutura inicial; não é executado na instalação com Compose |
 | `backend/alembic.ini` | Configuração do Alembic |
 | `backend/migrations/env.py` | Conexão e execução das migrations |
 | `backend/migrations/versions/` | Histórico de alterações na estrutura do banco |
@@ -152,7 +152,7 @@ docker compose config --quiet
 docker compose up --build -d
 ```
 
-Na primeira execução, o Compose cria o volume do banco e o Alembic cria a estrutura automaticamente. **Não execute `schema.sql` manualmente nesse fluxo.**
+Na primeira execução, o Compose cria o volume do banco e o Alembic cria a estrutura automaticamente. As migrations são a fonte da estrutura do banco.
 
 Confira os serviços:
 
@@ -304,10 +304,14 @@ Para desenvolvimento do backend fora do Docker, libere primeiro sua porta:
 
 ```powershell
 docker compose stop frontend backend
-uv run --project backend python -m uvicorn backend.api:app --reload
+uv run --project backend python -m backend.app
 ```
 
-Essa execução disponibiliza a API e `/docs` na porta 8000, sem servir o frontend. Para voltar ao fluxo completo, encerre o Uvicorn com Ctrl + C e execute `docker compose up -d`.
+O módulo `backend.app` centraliza a inicialização do Uvicorn. Ele lê `API_HOST` (padrão `127.0.0.1`) e `API_PORT` (padrão `8000`) do ambiente ou do `.env` local, preservando variáveis já fornecidas pelo ambiente. No Compose, esses valores são `0.0.0.0` e `8000` para permitir o acesso pela rede interna. O servidor inicia sem recarga automática.
+
+Credenciais continuam fora do código e da imagem: o `.env` é ignorado pelo Git e pelo contexto de build e é fornecido pelo Compose em tempo de execução.
+
+Essa execução disponibiliza a API e `/docs` na porta configurada, sem servir o frontend. Para voltar ao fluxo completo, encerre o Uvicorn com Ctrl + C e execute `docker compose up -d`.
 
 ## Rotas
 
