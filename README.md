@@ -4,6 +4,14 @@ Dashboard meteorológico de Florianópolis com ETL executado pelo site. A aplica
 
 Projeto de aprendizagem em Python, integração de APIs, SQL, desenvolvimento web e execução com containers. O uso é local: não depende de hospedagem pública.
 
+## Execução com Kubernetes (Minikube)
+
+Além do Docker Compose, o projeto possui manifests Kubernetes para frontend Nginx, backend FastAPI, PostgreSQL persistente, Job Alembic, ConfigMap, Secret criado localmente e HPA baseado em CPU.
+
+**[Guia completo de implantação, segurança e testes do Kubernetes](docs/kubernetes.md)**
+
+O laboratório de 21/11/2026 comprovou aumento automático de 2 para 5 réplicas sob carga sintética e redução para 2 após estabilização. Trata-se de um ambiente local, não de um benchmark ou configuração de produção.
+
 ## Funcionalidades
 
 - Importação de dados históricos por intervalo de datas.

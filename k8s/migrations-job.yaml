@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: floripa-clima-migrations
+  namespace: floripa-clima
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: floripa-clima-migrations
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrations
+          image: floripa-clima-backend:k8s
+          imagePullPolicy: Never
+          command:
+            - alembic
+            - -c
+            - /app/backend/alembic.ini
+            - upgrade
+            - head
+          envFrom:
+            - configMapRef:
+                name: floripa-clima-config
+            - secretRef:
+                name: floripa-clima-secret
